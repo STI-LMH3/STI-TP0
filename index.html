@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TP0 : Création de page web – Bac 4SI</title>
+    <style>
+        /* ============================================================
+                   RESET & BASE
+                   ============================================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #8b7a66;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            padding: 20px 10px;
+            perspective: 2500px;
+            user-select: none;
+            line-height: 1.4;
+        }
+
+        /* ============================================================
+                   LIVRE
+                   ============================================================ */
+        .book {
+            width: 210mm;
+            height: 297mm;
+            position: relative;
+            transform-style: preserve-3d;
+            transform: rotateY(-3deg) rotateX(2deg);
+            box-shadow: -10px 10px 50px rgba(0, 0, 0, 0.5);
+            border-radius: 4px;
+        }
+
+        .spine {
+            position: absolute;
+            left: -10px;
+            top: 0;
+            width: 10px;
+            height: 100%;
+            background: linear-gradient(to right, #2c1810 0%, #4a2c1a 30%, #3a2215 70%, #2c1810 100%);
+            border-radius: 3px 0 0 3px;
+            z-index: 0;
+            box-shadow: -3px 0 15px rgba(0, 0, 0, 0.4);
+            transform: translateX(-3px);
+        }
+
+        /* ============================================================
+                   PAGES & TAILLES DE POLICES
+                   ============================================================ */
+        .page {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: #fcf9f2;
+            border-radius: 2px;
+            padding: 10mm 12mm 16mm 12mm;
+            backface-visibility: hidden;
+            transform-style: preserve-3d;
+            overflow-y: auto;
+            box-shadow: inset 0 0 30px rgba(180, 160, 140, 0.08);
+            transition: transform 1s cubic-bezier(0.4, 0.0, 0.2, 1);
+            transform-origin: left center;
+        }
+
+        /* Pages 1 à 7 */
+        .page-p1 { z-index: 7; border-right: 2px solid #e8ddd0; font-size: 15px; }
+        .page-p2 { z-index: 6; border-right: 2px solid #e8ddd0; font-size: 11px; }
+        .page-p3 { z-index: 5; border-right: 2px solid #e8ddd0; font-size: 12px; }
+        .page-p4 { z-index: 4; border-right: 2px solid #e8ddd0; font-size: 15.5px; }
+        .page-p5 { z-index: 3; border-right: 2px solid #e8ddd0; font-size: 11.5px; }
+        .page-p6 { z-index: 2; border-right: 2px solid #e8ddd0; font-size: 11px; }
+        .page-p7 { z-index: 1; border-left: 2px solid #e8ddd0; font-size: 13px; }
+
+        /* États de flip pour 7 pages */
+        .book.flipped-1 .page-p1 { transform: rotateY(-180deg); z-index: 1; }
+        .book.flipped-2 .page-p1 { transform: rotateY(-180deg); z-index: 1; }
+        .book.flipped-2 .page-p2 { transform: rotateY(-180deg); z-index: 2; }
+        .book.flipped-3 .page-p1 { transform: rotateY(-180deg); z-index: 1; }
+        .book.flipped-3 .page-p2 { transform: rotateY(-180deg); z-index: 2; }
+        .book.flipped-3 .page-p3 { transform: rotateY(-180deg); z-index: 3; }
+        .book.flipped-4 .page-p1 { transform: rotateY(-180deg); z-index: 1; }
+        .book.flipped-4 .page-p2 { transform: rotateY(-180deg); z-index: 2; }
+        .book.flipped-4 .page-p3 { transform: rotateY(-180deg); z-index: 3; }
+        .book.flipped-4 .page-p4 { transform: rotateY(-180deg); z-index: 4; }
+        .book.flipped-5 .page-p1 { transform: rotateY(-180deg); z-index: 1; }
+        .book.flipped-5 .page-p2 { transform: rotateY(-180deg); z-index: 2; }
+        .book.flipped-5 .page-p3 { transform: rotateY(-180deg); z-index: 3; }
+        .book.flipped-5 .page-p4 { transform: rotateY(-180deg); z-index: 4; }
+        .book.flipped-5 .page-p5 { transform: rotateY(-180deg); z-index: 5; }
+        .book.flipped-6 .page-p1 { transform: rotateY(-180deg); z-index: 1; }
+        .book.flipped-6 .page-p2 { transform: rotateY(-180deg); z-index: 2; }
+        .book.flipped-6 .page-p3 { transform: rotateY(-180deg); z-index: 3; }
+        .book.flipped-6 .page-p4 { transform: rotateY(-180deg); z-index: 4; }
+        .book.flipped-6 .page-p5 { transform: rotateY(-180deg); z-index: 5; }
+        .book.flipped-6 .page-p6 { transform: rotateY(-180deg); z-index: 6; }
+
+        /* ============================================================
+                   COIN DE PAGE & DEGRADES
+                   ============================================================ */
+        .curl {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg,
+                    transparent 48%,
+                    rgba(220, 205, 185, 0.2) 52%,
+                    rgba(200, 185, 165, 0.35) 60%,
+                    rgba(180, 165, 145, 0.15) 80%);
+            border-radius: 0 0 3px 0;
+            pointer-events: none;
+            z-index: 5;
+            transition: all 0.6s ease;
+            transform-origin: bottom right;
+        }
+
+        .curl-shadow {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 90px;
+            height: 90px;
+            background: radial-gradient(ellipse at bottom right, rgba(0, 0, 0, 0.08) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 4;
+            opacity: 0.6;
+        }
+
+        /* ============================================================
+                   ZONES DE CLIC
+                   ============================================================ */
+        .click-area {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            z-index: 10;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .click-area-left { left: 0; width: 8%; border-radius: 0 4px 4px 0; }
+        .click-area-right { right: 0; width: 8%; border-radius: 4px 0 0 4px; }
+        .click-area:hover { background: rgba(0, 0, 0, 0.04); }
+
+        .click-area .arrow-icon {
+            font-size: 24px;
+            color: rgba(44, 62, 80, 0.15);
+            transition: all 0.3s ease;
+            opacity: 0;
+            font-weight: 300;
+        }
+
+        .click-area:hover .arrow-icon {
+            opacity: 1;
+            color: rgba(44, 62, 80, 0.35);
+        }
+
+        /* ============================================================
+                   INDICATEUR & PROGRESS BAR
+                   ============================================================ */
+        .page-indicator {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 15;
+            background: rgba(44, 62, 80, 0.7);
+            backdrop-filter: blur(8px);
+            color: #fff;
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 600;
+            pointer-events: none;
+        }
+
+        .progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(to right, #ff9f43, #c0392b);
+            z-index: 15;
+            transition: width 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
+            width: 0%;
+        }
+
+        /* ============================================================
+                   TITRES & PIED DE PAGE FIXE
+                   ============================================================ */
+        .main-course-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: #1a1a2e;
+            text-align: center;
+            background: linear-gradient(135deg, #1a1a2e 0%, #ff9f43 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            border-bottom: 2px solid #ff9f43;
+            padding-bottom: 4px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .page-title {
+            font-size: 16px;
+            color: #1a1a2e;
+            border-bottom: 2px solid #ff9f43;
+            padding-bottom: 4px;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .footer-signature {
+            position: absolute;
+            bottom: 6mm;
+            right: 12mm;
+            left: 12mm;
+            padding-top: 4px;
+            border-top: 1px dashed #d1c7b7;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Comic Sans MS', 'Chalkboard SE', cursive;
+            font-size: 11px;
+            color: #4a3a2a;
+            font-weight: bold;
+        }
+
+        /* ============================================================
+                   ELEMENTS DU TP & COURS
+                   ============================================================ */
+        h2 {
+            font-size: 14px;
+            color: #16213e;
+            margin: 8px 0 4px 0;
+            padding-left: 6px;
+            border-left: 3px solid #ff9f43;
+            font-weight: 600;
+        }
+
+        .page-p1 h2, .page-p4 h2 {
+            font-size: 16px;
+        }
+
+        .hand {
+            font-family: 'Comic Sans MS', 'Chalkboard SE', cursive, sans-serif;
+        }
+
+        .objectifs-box {
+            background: #f8f9fa;
+            border-left: 3px solid #27ae60;
+            padding: 8px 12px;
+            border-radius: 0 4px 4px 0;
+            margin-bottom: 10px;
+        }
+
+        .objectifs-box ul {
+            margin-left: 16px;
+            margin-top: 3px;
+        }
+
+        .objectifs-box li {
+            margin-bottom: 2px;
+        }
+
+        .blue-course-box {
+            background-color: #e3f2fd;
+            border: 1px solid #90caf9;
+            padding: 8px 10px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+
+        .structures-box {
+            background: #fdfefe;
+            border: 1.5px dashed #2980b9;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+
+        .structures-box ul {
+            list-style: none;
+            padding-left: 5px;
+        }
+
+        .structures-box li {
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        /* STYLES EXERCICES BAC (PAGE 7) */
+        .bac-card {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-left: 4px solid #c0392b;
+            border-radius: 6px;
+            padding: 10px 14px;
+            margin-bottom: 14px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+        }
+
+        .bac-badge {
+            display: inline-block;
+            background: #c0392b;
+            color: white;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-bottom: 6px;
+        }
+
+        .qcm-option {
+            display: flex;
+            align-items: center;
+            margin: 6px 0;
+            padding: 6px 8px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            font-family: 'Consolas', monospace;
+            font-size: 12px;
+        }
+
+        .qcm-box {
+            width: 16px;
+            height: 16px;
+            border: 1.5px solid #475569;
+            margin-right: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 12px;
+            border-radius: 2px;
+            background: #fff;
+        }
+
+        /* COLORATION SYNTAXIQUE ET BLOCS CODE */
+        .code-block {
+            background: #0f172a;
+            color: #f8fafc;
+            padding: 22px 10px 8px 10px;
+            border-radius: 6px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 10px;
+            line-height: 1.35;
+            margin: 6px 0;
+            border-left: 3px solid #ff9f43;
+            position: relative;
+            user-select: text;
+        }
+
+        .page-p4 .code-block {
+            font-size: 11px;
+        }
+
+        .code-block .comment { color: #64748b; font-style: italic; }
+        .code-block .tag { color: #ff9f43; font-weight: bold; }
+        .code-block .attr { color: #ffb86c; }
+        .code-block .string { color: #ffd399; }
+        .code-block .css-selector { color: #2ecc71; font-weight: bold; }
+        .code-block .css-prop { color: #a3e635; }
+        .code-block .css-val { color: #facc15; font-weight: bold; }
+
+        .code-block .label-code {
+            position: absolute;
+            top: 4px;
+            left: 8px;
+            background: #ff9f43;
+            color: #ffffff;
+            font-size: 8px;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 12px;
+            text-transform: uppercase;
+            user-select: none;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 4px;
+            right: 8px;
+            background: #334155;
+            color: #ffffff;
+            border: 1px solid #475569;
+            font-size: 8px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            z-index: 20;
+        }
+
+        .copy-btn:hover {
+            background: #27ae60;
+            border-color: #27ae60;
+        }
+
+        .img-container {
+            background: #ffffff;
+            border: 1px solid #dcdcdc;
+            border-radius: 6px;
+            padding: 6px;
+            margin: 6px 0;
+            text-align: center;
+        }
+
+        .cours-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 4px 0;
+            font-size: 10px;
+            background: #fff;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .page-p1 .cours-table, .page-p4 .cours-table {
+            font-size: 12px;
+        }
+
+        .cours-table th {
+            background: #1e293b;
+            color: #ff9f43;
+            padding: 5px 7px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .cours-table td {
+            padding: 5px 7px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .cours-table tr:nth-child(even) {
+            background: #f8fafc;
+        }
+
+        .scrollbar::-webkit-scrollbar { width: 4px; }
+        .scrollbar::-webkit-scrollbar-thumb { background: #c4b5a0; border-radius: 10px; }
+
+        @media screen and (max-width: 800px) {
+            body { padding: 5px; perspective: none; }
+            .book { width: 100%; height: auto; transform: none !important; box-shadow: none; }
+            .spine, .click-area, .page-indicator, .progress-bar, .curl, .curl-shadow { display: none; }
+            .page { position: relative; transform: none !important; display: none; padding: 10px; }
+            .book.show-p1 .page-p1 { display: block; }
+            .book.show-p2 .page-p2 { display: block; }
+            .book.show-p3 .page-p3 { display: block; }
+            .book.show-p4 .page-p4 { display: block; }
+            .book.show-p5 .page-p5 { display: block; }
+            .book.show-p6 .page-p6 { display: block; }
+            .book.show-p7 .page-p7 { display: block; }
+            .footer-signature { position: relative; bottom: auto; right: auto; left: auto; margin-top: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="book" id="book">
+        <div class="spine"></div>
+
+        <!-- ========================================================== -->
+        <!-- PAGE 1 – TP0 TITRE, OBJECTIFS, ARBORESCENCE & STRUCTURES    -->
+        <!-- ========================================================== -->
+        <div class="page page-p1 scrollbar" id="page1">
+            <div class="curl-shadow"></div>
+            <div class="curl"></div>
+
+            <div class="main-course-title">📝 TP0 : Création de page web</div>
+
+            <div class="objectifs-box">
+                <strong style="color: #27ae60;">🎯 Objectifs du TP :</strong>
+				<br>
+                <ul>
+                    <li>Création de pages HTML et liaisons CSS externes.</li>
+                    <li>Gestion de la balise hypertexte <code>&lt;a&gt;</code> et ses attributs.</li>
+                    <li>Propriétés CSS des balises de liens <code>&lt;a&gt;</code> et des listes (<code>&lt;ul&gt;</code>, <code>&lt;ol&gt;</code>).</li>
+                    <li>Dimensionnement responsive (%) et positionnement CSS.</li>
+                </ul>
+            </div>
+<br>
+<br>
+            <h2>📁 Arborescence des Fichiers du Projet</h2>
+            <p><span class="hand">Organisation du dossier <strong>Prestation</strong> :</span></p>
+<br>
+<br>
+            <div class="img-container">
+                <svg viewBox="0 0 360 150" style="width:100%; max-height:140px;">
+                    <rect x="120" y="5" width="120" height="26" rx="4" fill="#2c3e50" stroke="#34495e" stroke-width="1.5"/>
+                    <text x="180" y="22" font-family="'Courier New', monospace" font-size="11" font-weight="bold" fill="#ffffff" text-anchor="middle">Prestation/</text>
+
+                    <path d="M 180 31 L 180 48 M 60 48 L 300 48 M 60 48 L 60 60 M 180 48 L 180 60 M 300 48 L 300 60" stroke="#7f8c8d" stroke-width="1.5" fill="none"/>
+
+                    <rect x="10" y="60" width="100" height="58" rx="4" fill="#ebf5fb" stroke="#2980B9" stroke-width="1.5"/>
+                    <text x="15" y="73" font-family="'Courier New', monospace" font-size="8.5" font-weight="bold" fill="#2980B9">Index.html</text>
+                    <text x="15" y="85" font-family="'Courier New', monospace" font-size="8.5" fill="#27ae60" font-weight="bold">style.css</text>
+                    <text x="15" y="97" font-family="'Courier New', monospace" font-size="8.5" fill="#555">Contact.html</text>
+                    <text x="15" y="109" font-family="'Courier New', monospace" font-size="8.5" fill="#555">Forum.html</text>
+
+                    <rect x="130" y="60" width="100" height="24" rx="4" fill="#fef9e7" stroke="#f39c12" stroke-width="1.5"/>
+                    <text x="180" y="76" font-family="'Courier New', monospace" font-size="9" font-weight="bold" fill="#d35400" text-anchor="middle">Images/</text>
+
+                    <path d="M 180 84 L 180 94" stroke="#7f8c8d" stroke-width="1.5" fill="none"/>
+                    <rect x="130" y="94" width="100" height="34" rx="4" fill="#ffffff" stroke="#f39c12" stroke-width="1" stroke-dasharray="3,3"/>
+                    <text x="135" y="107" font-family="'Courier New', monospace" font-size="8" fill="#d35400">Baniere.png</text>
+                    <text x="135" y="120" font-family="'Courier New', monospace" font-size="8" fill="#d35400">Logo.png</text>
+
+                    <rect x="250" y="60" width="100" height="24" rx="4" fill="#eaafaf" stroke="#c0392b" stroke-width="1.5"/>
+                    <text x="300" y="76" font-family="'Courier New', monospace" font-size="9" font-weight="bold" fill="#922b21" text-anchor="middle">Archives/</text>
+
+                    <path d="M 300 84 L 300 94" stroke="#7f8c8d" stroke-width="1.5" fill="none"/>
+                    <rect x="240" y="94" width="118" height="34" rx="4" fill="#ffffff" stroke="#c0392b" stroke-width="1" stroke-dasharray="3,3"/>
+                    <text x="244" y="107" font-family="'Courier New', monospace" font-size="7.5" fill="#922b21">Arch10-2021.html</text>
+                    <text x="244" y="120" font-family="'Courier New', monospace" font-size="7.5" fill="#922b21">Arch11-2021.html</text>
+                </svg>
+            </div>
+<br>
+<br>
+            <div class="structures-box">
+                <h2>🏷️ Balises de Structure HTML de la Maquette :</h2>
+                <ul>
+                    <li><strong style="color: #d35400;">A :</strong> <code>&lt;header&gt;</code> — En-tête de la page (Logo + Bannière)</li>
+                    <li><strong style="color: #2980b9;">B :</strong> <code>&lt;nav&gt;</code> — Menu de navigation principal</li>
+                    <li><strong style="color: #27ae60;">C :</strong> <code>&lt;main&gt;</code> — Contenu principal de la page web</li>
+                    <li><strong style="color: #8e44ad;">D :</strong> <code>&lt;aside&gt;</code> — Barre latérale (Archives des prestations)</li>
+                </ul>
+            </div>
+
+            <div class="footer-signature">
+                <span class="hand">📚 Livre STI -4éme SI</span>
+                <span class="hand">✏️ Prof : Hosni Yosri</span>
+            </div>
+        </div>
+
+        <!-- ========================================================== -->
+        <!-- PAGE 2 – MAQUETTE DE LA PAGE (INDEX.HTML)                  -->
+        <!-- ========================================================== -->
+        <div class="page page-p2 scrollbar" id="page2">
+            <div class="curl-shadow"></div>
+            <div class="curl"></div>
+
+            <div class="page-title">🖼️ Maquette du fichier « Index.html »</div>
+
+            <p><span class="hand">La maquette avec 4 zones principales (<strong>A</strong>, <strong>B</strong>, <strong>C</strong>, <strong>D</strong>) :</span></p>
+<br>
+<br>
+<br>
+<br>
+
+            <div class="img-container">
+                <svg viewBox="0 0 380 210" style="width:100%; height:auto;">
+                    <rect x="5" y="5" width="370" height="200" fill="#ffffff" stroke="#2c3e50" stroke-width="2"/>
+                    <rect x="10" y="10" width="360" height="45" fill="#f4f6f7" stroke="#34495e" stroke-width="1"/>
+                    
+                    <rect x="15" y="14" width="55" height="37" fill="#ebf5fb" stroke="#2980B9" stroke-width="1" stroke-dasharray="2,2"/>
+                    <text x="20" y="36" font-family="sans-serif" font-size="8" font-weight="bold" fill="#2980B9">Logo.png</text>
+
+                    <rect x="75" y="14" width="290" height="37" fill="#fef9e7" stroke="#f39c12" stroke-width="1" stroke-dasharray="2,2"/>
+                    <text x="82" y="36" font-family="sans-serif" font-size="9" font-weight="bold" fill="#d35400">Baniere.png</text>
+
+                    <rect x="0" y="22" width="20" height="15" fill="#ff9f43" rx="3"/>
+                    <text x="10" y="33" font-family="sans-serif" font-size="9" font-weight="bold" fill="#fff" text-anchor="middle">A</text>
+
+                    <rect x="10" y="60" width="70" height="140" fill="#f2f4f4" stroke="#34495e" stroke-width="1"/>
+                    <text x="16" y="80" font-family="sans-serif" font-size="8.5" fill="#2980B9" font-weight="bold" text-decoration="underline">Accueil</text>
+                    <text x="16" y="100" font-family="sans-serif" font-size="8.5" fill="#2980B9" font-weight="bold" text-decoration="underline">Contact</text>
+                    <text x="16" y="120" font-family="sans-serif" font-size="8.5" fill="#2980B9" font-weight="bold" text-decoration="underline">Forum</text>
+
+                    <rect x="0" y="125" width="20" height="15" fill="#ff9f43" rx="3"/>
+                    <text x="10" y="136" font-family="sans-serif" font-size="9" font-weight="bold" fill="#fff" text-anchor="middle">B</text>
+
+                    <rect x="85" y="60" width="180" height="140" fill="#ffffff" stroke="#34495e" stroke-width="1"/>
+                    <text x="175" y="78" font-family="sans-serif" font-size="8" font-weight="bold" fill="#1a2a3a" text-anchor="middle">Bienvenue chez l'agence de voyage</text>
+                    <text x="175" y="90" font-family="sans-serif" font-size="8.5" font-weight="bold" fill="#c0392b" text-anchor="middle">EasyTravel</text>
+                    
+                    <text x="90" y="110" font-family="sans-serif" font-size="6.5" fill="#555">Lorem ipsum dolor sit amet, consectetur</text>
+                    <text x="90" y="120" font-family="sans-serif" font-size="6.5" fill="#555">adipiscing elit, sed do eiusmod tempor</text>
+
+                    <rect x="165" y="195" width="20" height="15" fill="#ff9f43" rx="3"/>
+                    <text x="175" y="206" font-family="sans-serif" font-size="9" font-weight="bold" fill="#fff" text-anchor="middle">C</text>
+
+                    <rect x="270" y="60" width="100" height="140" fill="#fdfefe" stroke="#34495e" stroke-width="1"/>
+                    <text x="274" y="76" font-family="sans-serif" font-size="7.5" font-weight="bold" fill="#16213e">Archive prestations</text>
+                    
+                    <text x="276" y="94" font-family="sans-serif" font-size="7" fill="#333">■ Archive2021</text>
+                    <text x="284" y="106" font-family="sans-serif" font-size="6.5" fill="#2980B9" text-decoration="underline">○ Novembre 2021</text>
+                    <text x="284" y="117" font-family="sans-serif" font-size="6.5" fill="#2980B9" text-decoration="underline">○ Octobre 2021</text>
+
+                    <text x="276" y="134" font-family="sans-serif" font-size="7" fill="#333">■ Archive2022</text>
+                    <text x="284" y="145" font-family="sans-serif" font-size="6" fill="#7f8c8d">(non encore prêt)</text>
+
+                    <rect x="358" y="125" width="20" height="15" fill="#ff9f43" rx="3"/>
+                    <text x="368" y="136" font-family="sans-serif" font-size="9" font-weight="bold" fill="#fff" text-anchor="middle">D</text>
+                </svg>
+            </div>
+
+            <div class="footer-signature">
+                <span class="hand">📚 Livre STI -4éme SI</span>
+                <span class="hand">✏️ Prof : Hosni Yosri</span>
+            </div>
+        </div>
+
+        <!-- ========================================================== -->
+        <!-- PAGE 3 – COURS : BALISE <a> ET PROPRIETES                  -->
+        <!-- ========================================================== -->
+        <div class="page page-p3 scrollbar" id="page3">
+            <div class="curl-shadow"></div>
+            <div class="curl"></div>
+
+            <div class="page-title">📖 Cours : La Balise Hypertexte &lt;a&gt; et ses Propriétés</div>
+
+            <div class="blue-course-box">
+                <h2 style="margin-top:0; color:#0277bd; border-left-color:#0288d1;">1. La Balise HTML &lt;a&gt; et ses Attributs</h2>
+                <p style="margin-bottom: 6px;">La balise <code>&lt;a&gt;</code> permet d'insérer un lien hypertexte. Ses attributs essentiels sont :</p>
+<br>
+                <table class="cours-table">
+                    <tr>
+                        <th style="width: 25%;">Attribut</th>
+                        <th style="width: 75%;">Détails, Description & Exemples HTML</th>
+                    </tr>
+                    <tr>
+                        <td><code>href="..."</code></td>
+                        <td>
+                            Indique l'URL ou le chemin du fichier cible.<br/>
+                            <em>Exemple :</em> <code>&lt;a href="Contact.html"&gt;Contact&lt;/a&gt;</code>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code>target="..."</code></td>
+                        <td>
+                            Définit le lieu d'affichage du lien :<br/>
+                            • <code>_blank</code> : Ouvre dans un <strong>nouvel onglet</strong>.<br/>
+                            &nbsp;&nbsp;<em>Ex :</em> <code>&lt;a href="Contact.html" target="_blank"&gt;Contact&lt;/a&gt;</code><br/>
+                            • <code>_self</code> : Ouvre dans le <strong>même onglet</strong> (par défaut).<br/>
+                            &nbsp;&nbsp;<em>Ex :</em> <code>&lt;a href="Index.html" target="_self"&gt;Accueil&lt;/a&gt;</code><br/>
+                            • <code>_parent</code> : Cadre parent.<br/>
+                            &nbsp;&nbsp;<em>Ex :</em> <code>&lt;a href="Page.html" target="_parent"&gt;Parent&lt;/a&gt;</code><br/>
+                            • <code>_top</code> : Pleine fenêtre.<br/>
+                            &nbsp;&nbsp;<em>Ex :</em> <code>&lt;a href="Page.html" target="_top"&gt;Pleine Fenêtre&lt;/a&gt;</code>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code>title="..."</code></td>
+                        <td>
+                            Affiche une info-bulle explicative au survol du pointeur de la souris.<br/>
+                            <em>Exemple :</em> <code>&lt;a href="Info.html" title="Info-bulle"&gt;Lien&lt;/a&gt;</code>
+                        </td>
+                    </tr>
+                </table>
+<br>
+                <h2 style="color:#0277bd; border-left-color:#0288d1; margin-top:10px;">2. Propriétés CSS & Pseudo-Classes d'un Lien</h2>
+                <p style="margin-bottom: 6px;">Pour modifier l'apparence et les différents états du lien :</p>
+<br>
+                <table class="cours-table">
+                    <tr>
+                        <th style="width: 35%;">Propriété / Pseudo-classe</th>
+                        <th style="width: 65%;">Rôle en CSS</th>
+                    </tr>
+                    <tr>
+                        <td><code>display: inline;</code></td>
+                        <td>Comportement par défaut : le lien reste dans le flux du texte.</td>
+                    </tr>
+                    <tr>
+                        <td><code>display: block;</code></td>
+                        <td>Transforme le lien en bloc occupant toute la largeur (100%).</td>
+                    </tr>
+                    <tr>
+                        <td><code>display: inline-block;</code></td>
+                        <td>Lien sur la même ligne mais permettant de régler width, height, padding, margin.</td>
+                    </tr>
+                    <tr>
+                        <td><code>display: none;</code></td>
+                        <td>Masque complètement le lien sur la page.</td>
+                    </tr>
+                    <tr>
+                        <td><code>text-decoration</code></td>
+                        <td>Sert à enlever le soulignement avec <code>none</code> ou à l'ajouter avec <code>underline</code>.</td>
+                    </tr>
+                    <tr>
+                        <td><code>a:link</code></td>
+                        <td>Applique un style aux liens non encore visités par l'utilisateur.</td>
+                    </tr>
+                    <tr>
+                        <td><code>a:visited</code></td>
+                        <td>Applique un style aux liens déjà visités dans le navigateur.</td>
+                    </tr>
+                    <tr>
+                        <td><code>a:hover</code></td>
+                        <td>Applique un style lorsque la souris survole le lien.</td>
+                    </tr>
+                    <tr>
+                        <td><code>a:active</code></td>
+                        <td>Applique un style au moment exact où l'utilisateur clique.</td>
+                    </tr>
+                    <tr>
+                        <td><code>a:focus</code></td>
+                        <td>Applique un style lorsque le lien reçoit le focus (navigation clavier).</td>
+                    </tr>
+                </table>
+            </div>
+			<br>
+			<br>
+			<br>
+
+            <div class="code-block">
+                <span class="label-code">Exemple HTML & CSS</span>
+                <span class="comment">&lt;!-- Exemples HTML pour target --&gt;</span><br/>
+                <span class="tag">&lt;a</span> <span class="attr">href</span>=<span class="string">"Contact.html"</span> <span class="attr">target</span>=<span class="string">"_blank"</span> <span class="attr">title</span>=<span class="string">"Envoyer un message"</span><span class="tag">&gt;</span>Contact (Onglet)<span class="tag">&lt;/a&gt;</span><br/>
+                <span class="tag">&lt;a</span> <span class="attr">href</span>=<span class="string">"Index.html"</span> <span class="attr">target</span>=<span class="string">"_self"</span><span class="tag">&gt;</span>Accueil (Même page)<span class="tag">&lt;/a&gt;</span><br/><br/>
+                <span class="comment">/* Style CSS pour la balise a et ses différents états */</span><br/>
+                <span class="css-selector">a</span> { <span class="css-prop">display</span>: <span class="css-val">inline-block</span>; <span class="css-prop">text-decoration</span>: <span class="css-val">none</span>; }<br/>
+                <span class="css-selector">a:link</span> { <span class="css-prop">color</span>: <span class="css-val">#0288d1</span>; }<br/>
+                <span class="css-selector">a:visited</span> { <span class="css-prop">color</span>: <span class="css-val">#8e44ad</span>; }<br/>
+                <span class="css-selector">a:hover</span> { <span class="css-prop">color</span>: <span class="css-val">#d32f2f</span>; <span class="css-prop">text-decoration</span>: <span class="css-val">underline</span>; }<br/>
+                <span class="css-selector">a:active</span> { <span class="css-prop">color</span>: <span class="css-val">#f39c12</span>; }<br/>
+                <span class="css-selector">a:focus</span> { <span class="css-prop">outline</span>: <span class="css-val">2px solid #2ecc71</span>; }
+            </div>
+
+            <div class="footer-signature">
+                <span class="hand">📚 Livre STI -4éme SI</span>
+                <span class="hand">✏️ Prof : Hosni Yosri</span>
+            </div>
+        </div>
+
+        <!-- ========================================================== -->
+        <!-- PAGE 4 – APERÇU, DIMENSIONNEMENT & SCHÉMA VISUEL          -->
+        <!-- ========================================================== -->
+        <div class="page page-p4 scrollbar" id="page4">
+            <div class="curl-shadow"></div>
+            <div class="curl"></div>
+
+            <div class="page-title">🖼️ Aperçu Visuel, Dimensionnement & Style CSS</div>
+
+            <h2>1. Aperçu Visuel & Dimensionnement responsive</h2>
+<br>
+<br>
+            <div class="img-container">
+                <svg viewBox="0 0 380 90" style="width:100%; height:auto;">
+                    <rect x="5" y="5" width="370" height="22" fill="#34495e" rx="3"/>
+                    <text x="190" y="20" font-family="sans-serif" font-size="10" font-weight="bold" fill="#ffffff" text-anchor="middle">HEADER (width: 100%)</text>
+                    
+                    <rect x="5" y="32" width="74" height="35" fill="#f39c12" rx="3"/>
+                    <text x="42" y="50" font-family="sans-serif" font-size="9" font-weight="bold" fill="#ffffff" text-anchor="middle">NAV</text>
+                    <text x="42" y="61" font-family="sans-serif" font-size="8" fill="#ffffff" text-anchor="middle">20%</text>
+
+                    <rect x="84" y="32" width="203" height="35" fill="#27ae60" rx="3"/>
+                    <text x="185" y="50" font-family="sans-serif" font-size="9" font-weight="bold" fill="#ffffff" text-anchor="middle">MAIN</text>
+                    <text x="185" y="61" font-family="sans-serif" font-size="8" fill="#ffffff" text-anchor="middle">55%</text>
+
+                    <rect x="292" y="32" width="83" height="35" fill="#8e44ad" rx="3"/>
+                    <text x="333" y="50" font-family="sans-serif" font-size="9" font-weight="bold" fill="#ffffff" text-anchor="middle">ASIDE</text>
+                    <text x="333" y="61" font-family="sans-serif" font-size="8" fill="#ffffff" text-anchor="middle">25%</text>
+
+                    <rect x="5" y="72" width="370" height="15" fill="#1e293b" rx="2"/>
+                    <text x="190" y="83" font-family="sans-serif" font-size="8" fill="#ffffff" text-anchor="middle">FOOTER (width: 100% | clear: both)</text>
+                </svg>
+            </div>
+<br>
+<br>
+            <table class="cours-table">
+                <tr>
+                    <th>Zone</th>
+                    <th>Balise HTML</th>
+                    <th>Largeur CSS (<code>width</code>)</th>
+                    <th>Comportement / Alignement</th>
+                </tr>
+                <tr>
+                    <td><strong>Zone A</strong></td>
+                    <td><code>&lt;header&gt;</code></td>
+                    <td><code>width: 100%;</code></td>
+                    <td>En-tête supérieur (Logo + Bannière).</td>
+                </tr>
+                <tr>
+                    <td><strong>Zone B</strong></td>
+                    <td><code>&lt;nav&gt;</code></td>
+                    <td><code>width: 20%;</code></td>
+                    <td>Menu de navigation latéral (<code>float: left;</code>).</td>
+                </tr>
+                <tr>
+                    <td><strong>Zone C</strong></td>
+                    <td><code>&lt;main&gt;</code></td>
+                    <td><code>width: 55%;</code></td>
+                    <td>Zone de contenu principal (<code>float: left;</code>).</td>
+                </tr>
+                <tr>
+                    <td><strong>Zone D</strong></td>
+                    <td><code>&lt;aside&gt;</code></td>
+                    <td><code>width: 25%;</code></td>
+                    <td>Barre latérale d'archives à droite (<code>float: left;</code>).</td>
+                </tr>
+            </table>
+<br>
+<br>
+<br>
+            <h2>2. Fichier CSS Séparé : « style.css »</h2>
+            <div class="code-block">
+                <span class="label-code">style.css</span>
+                <span class="comment">/* Reset de base */</span><br/>
+                <span class="css-selector">*</span> { <span class="css-prop">box-sizing</span>: <span class="css-val">border-box</span>; <span class="css-prop">margin</span>: <span class="css-val">0</span>; <span class="css-prop">padding</span>: <span class="css-val">0</span>; }<br/><br/>
+                <span class="comment">/* Structure responsive en % */</span><br/>
+                <span class="css-selector">header</span> { <span class="css-prop">width</span>: <span class="css-val">100%</span>; <span class="css-prop">background-color</span>: <span class="css-val">#f4f6f7</span>; <span class="css-prop">padding</span>: <span class="css-val">8px</span>; }<br/>
+                <span class="css-selector">nav</span> { <span class="css-prop">width</span>: <span class="css-val">20%</span>; <span class="css-prop">float</span>: <span class="css-val">left</span>; <span class="css-prop">padding</span>: <span class="css-val">10px</span>; }<br/>
+                <span class="css-selector">nav a</span> { <span class="css-prop">display</span>: <span class="css-val">block</span>; <span class="css-prop">color</span>: <span class="css-val">#27ae60</span>; <span class="css-prop">text-decoration</span>: <span class="css-val">none</span>; <span class="css-prop">margin-bottom</span>: <span class="css-val">6px</span>; }<br/>
+                <span class="css-selector">nav a:hover</span> { <span class="css-prop">color</span>: <span class="css-val">#2ecc71</span>; <span class="css-prop">text-decoration</span>: <span class="css-val">underline</span>; }<br/>
+                <span class="css-selector">main</span> { <span class="css-prop">width</span>: <span class="css-val">55%</span>; <span class="css-prop">float</span>: <span class="css-val">left</span>; <span class="css-prop">padding</span>: <span class="css-val">10px</span>; <span class="css-prop">text-align</span>: <span class="css-val">justify</span>; }<br/>
+                <span class="css-selector">aside</span> { <span class="css-prop">width</span>: <span class="css-val">25%</span>; <span class="css-prop">float</span>: <span class="css-val">left</span>; <span class="css-prop">padding</span>: <span class="css-val">10px</span>; }<br/>
+                <span class="css-selector">footer</span> { <span class="css-prop">clear</span>: <span class="css-val">both</span>; <span class="css-prop">width</span>: <span class="css-val">100%</span>; <span class="css-prop">background-color</span>: <span class="css-val">#1e293b</span>; <span class="css-prop">color</span>: <span class="css-val">#fff</span>; <span class="css-prop">text-align</span>: <span class="css-val">center</span>; <span class="css-prop">padding</span>: <span class="css-val">8px</span>; }
+            </div>
+
+            <div class="footer-signature">
+                <span class="hand">📚 Livre STI -4éme SI</span>
+                <span class="hand">✏️ Prof : Hosni Yosri</span>
+            </div>
+        </div>
+
+        <!-- ========================================================== -->
+        <!-- PAGE 5 – COURS : LES LISTES EN HTML ET CSS                 -->
+        <!-- ========================================================== -->
+        <div class="page page-p5 scrollbar" id="page5">
+            <div class="curl-shadow"></div>
+            <div class="curl"></div>
+
+            <div class="page-title">📚 Cours : Les Listes HTML (&lt;ul&gt;, &lt;ol&gt;) & Propriétés CSS</div>
+
+            <div class="blue-course-box">
+                <h2 style="margin-top:0; color:#0277bd; border-left-color:#0288d1;">1. Balises HTML de Listes</h2>
+                <p>En HTML, les éléments d'une liste sont encadrés par <code>&lt;li&gt;</code> (<em>List Item</em>) :</p>
+                <ul>
+                    <li><code>&lt;ul&gt;</code> (<em>Unordered List</em>) : Liste non ordonnée à puces.</li>
+                    <li><code>&lt;ol&gt;</code> (<em>Ordered List</em>) : Liste ordonnée numérotée. Attributs HTML : <code>start="5"</code> (début de numérotation), <code>reversed</code> (ordre inverse), et <code>type="A|a|I|i|1"</code>.</li>
+                </ul>
+
+                <h2 style="color:#0277bd; border-left-color:#0288d1; margin-top:8px;">2. Propriétés CSS des Listes</h2>
+                <table class="cours-table">
+                    <tr>
+                        <th style="width: 30%;">Propriété CSS</th>
+                        <th style="width: 70%;">Valeurs & Explications</th>
+                    </tr>
+                    <tr>
+                        <td><code>list-style-type</code></td>
+                        <td>
+                            <strong>Puces &lt;ul&gt; :</strong> <code>disc</code> (● par défaut), <code>circle</code> (○ cercle vide), <code>square</code> (■ carré), <code>none</code> (supprime les puces).<br/>
+                            <strong>Numérotation &lt;ol&gt; :</strong> <code>decimal</code> (1, 2, 3), <code>decimal-leading-zero</code> (01, 02), <code>lower-alpha</code> (a, b), <code>upper-alpha</code> (A, B), <code>lower-roman</code> (i, ii), <code>upper-roman</code> (I, II).
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code>list-style-position</code></td>
+                        <td>
+                            • <code>outside</code> : Puce à l'extérieur du bloc de texte (par défaut).<br/>
+                            • <code>inside</code> : Puce intégrée à l'intérieur du bloc de texte.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><code>list-style-image</code></td>
+                        <td><code>url('icone.png')</code> : Permet de remplacer la puce par une image personnalisée.</td>
+                    </tr>
+                    <tr>
+                        <td><code>list-style</code></td>
+                        <td>Raccourci CSS : <code>list-style: square inside url('bullet.png');</code></td>
+                    </tr>
+                </table>
+            </div>
+
+            <h2>🎨 Illustration des Styles de Puces & Exemples</h2>
+            <div class="img-container">
+                <svg viewBox="0 0 360 85" style="width:100%; height:auto;">
+                    <rect x="0" y="0" width="360" height="85" fill="#f8fafc" rx="4"/>
+                    <text x="10" y="18" font-family="sans-serif" font-size="9" font-weight="bold" fill="#0277bd">Listes Non Ordonnées (&lt;ul&gt;)</text>
+                    <circle cx="20" cy="35" r="4" fill="#333"/>
+                    <text x="30" y="38" font-family="sans-serif" font-size="8" fill="#333">disc (défaut)</text>
+                    
+                    <circle cx="120" cy="35" r="4" fill="none" stroke="#333" stroke-width="1.5"/>
+                    <text x="130" y="38" font-family="sans-serif" font-size="8" fill="#333">circle</text>
+
+                    <rect x="210" y="31" width="7" height="7" fill="#333"/>
+                    <text x="222" y="38" font-family="sans-serif" font-size="8" fill="#333">square</text>
+
+                    <text x="10" y="58" font-family="sans-serif" font-size="9" font-weight="bold" fill="#0277bd">Listes Ordonnées (&lt;ol&gt;)</text>
+                    <text x="15" y="75" font-family="sans-serif" font-size="8" font-weight="bold" fill="#c0392b">1, 2, 3</text>
+                    <text x="42" y="75" font-family="sans-serif" font-size="7.5" fill="#333">decimal</text>
+
+                    <text x="115" y="75" font-family="sans-serif" font-size="8" font-weight="bold" fill="#c0392b">a, b, c</text>
+                    <text x="142" y="75" font-family="sans-serif" font-size="7.5" fill="#333">lower-alpha</text>
+
+                    <text x="210" y="75" font-family="sans-serif" font-size="8" font-weight="bold" fill="#c0392b">I, II, III</text>
+                    <text x="242" y="75" font-family="sans-serif" font-size="7.5" fill="#333">upper-roman</text>
+                </svg>
+            </div>
+
+            <div class="code-block">
+                <span class="label-code">Code CSS pour les Listes</span>
+                <span class="comment">/* Exemples de personnalisation CSS des listes */</span><br/>
+                <span class="css-selector">ul.menu-puces</span> {<br/>
+                &nbsp;&nbsp;<span class="css-prop">list-style-type</span>: <span class="css-val">square</span>;<br/>
+                &nbsp;&nbsp;<span class="css-prop">list-style-position</span>: <span class="css-val">inside</span>;<br/>
+                }<br/>
+                <span class="css-selector">ol.archives-list</span> {<br/>
+                &nbsp;&nbsp;<span class="css-prop">list-style-type</span>: <span class="css-val">lower-roman</span>;<br/>
+                }
+            </div>
+
+            <div class="footer-signature">
+                <span class="hand">📚 Livre STI -4éme SI</span>
+                <span class="hand">✏️ Prof : Hosni Yosri</span>
+            </div>
+        </div>
+
+        <!-- ========================================================== -->
+        <!-- PAGE 6 – SOLUTION : FICHIER INDEX.HTML SEPARE              -->
+        <!-- ========================================================== -->
+        <div class="page page-p6 scrollbar" id="page6">
+            <div class="curl-shadow"></div>
+            <div class="curl"></div>
+
+            <div class="page-title">📄 Fichier HTML : « Index.html »</div>
+<br>
+<br>
+            <p><span class="hand">Code HTML principal appliquant la structure et faisant appel à <code>style.css</code> :</span></p>
+<br>
+<br>
+<br>
+            <div class="code-block">
+                <span class="label-code">Index.html</span>
+                <span class="tag">&lt;!DOCTYPE html&gt;</span><br/>
+                <span class="tag">&lt;html</span> <span class="attr">lang</span>=<span class="string">"fr"</span><span class="tag">&gt;</span><br/>
+                <span class="tag">&lt;head&gt;</span><br/>
+                &nbsp;&nbsp;<span class="tag">&lt;meta</span> <span class="attr">charset</span>=<span class="string">"UTF-8"</span> <span class="tag">/&gt;</span><br/>
+                &nbsp;&nbsp;<span class="tag">&lt;title&gt;</span>Accueil - EasyTravel<span class="tag">&lt;/title&gt;</span><br/>
+                &nbsp;&nbsp;<span class="tag">&lt;link</span> <span class="attr">rel</span>=<span class="string">"stylesheet"</span> <span class="attr">href</span>=<span class="string">"style.css"</span> <span class="tag">/&gt;</span><br/>
+                <span class="tag">&lt;/head&gt;</span><br/>
+                <span class="tag">&lt;body&gt;</span><br/>
+                &nbsp;&nbsp;<span class="tag">&lt;header&gt;</span><br/>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="tag">&lt;a</span> <span class="attr">href</span>=<span class="string">"Index.html"</span><span class="tag">&gt;&lt;img</span> <span class="attr">src</span>=<span class="string">"Images/Logo.png"</span> <span class="attr">alt</span>=<span class="string">"Logo"</span> <span class="tag">/&gt;&lt;/a&gt;</span><br/>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="tag">&lt;img</span> <span class="attr">src</span>=<span class="string">"Images/Baniere.png"</span> <span class="attr">alt</span>=<span class="string">"Bannière"</span> <span class="tag">/&gt;</span><br/>
+                &nbsp;&nbsp;<span class="tag">&lt;/header&gt;</span><br/>
+                &nbsp;&nbsp;<span class="tag">&lt;nav&gt;</span><br/>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="tag">&lt;a</span> <span class="attr">href</span>=<span class="string">"Index.html"</span> <span class="attr">target</span>=<span class="string">"_self"</span><span class="tag">&gt;</span>Accueil<span class="tag">&lt;/a&gt;</span><br/>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="tag">&lt;a</span> <span class="attr">href</span>=<span class="string">"Contact.html"</span> <span class="attr">target</span>=<span class="string">"_self"</span><span class="tag">&gt;</span>Contact<span class="tag">&lt;/a&gt;</span><br/>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="tag">&lt;a</span> <span class="attr">href</span>=<span class="string">"Forum.html"</span> <span class="attr">target</span>=<span class="string">"_self"</span><span class="tag">&gt;</span>Forum<span class="tag">&lt;/a&gt;</span><br/>
+                &nbsp;&nbsp;<span class="tag">&lt;/nav&gt;</span><br/>
+                &nbsp;&nbsp;<span class="tag">&lt;main&gt;</span><br/>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="tag">&lt;h1&gt;</span>Bienvenue chez l'agence EasyTravel<span class="tag">&lt;/h1&gt;</span><br/>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="tag">&lt;p&gt;</span>Lorem ipsum dolor sit amet...<span class="tag">&lt;/p&gt;</span><br/>
+                &nbsp;&nbsp;<span class="tag">&lt;/main&gt;</span><br/>
+                &nbsp;&nbsp;<span class="tag">&lt;aside&gt;</span><br/>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="tag">&lt;h3&gt;</span>Archive des prestations<span class="tag">&lt;/h3&gt;</span><br/>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">&lt;!-- Liste non ordonnée avec style square --&gt;</span><br/>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="tag">&lt;ul</span> <span class="attr">class</span>=<span class="string">"menu-puces"</span><span class="tag">&gt;</span><br/>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tag">&lt;li&gt;</span>Archive2021<br/>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">&lt;!-- Liste ordonnée avec attribut start --&gt;</span><br/>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tag">&lt;ol</span> <span class="attr">start</span>=<span class="string">"10"</span> <span class="attr">class</span>=<span class="string">"archives-list"</span><span class="tag">&gt;</span><br/>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tag">&lt;li&gt;&lt;a</span> <span class="attr">href</span>=<span class="string">"Archives/Arch11-2021.html"</span> <span class="attr">target</span>=<span class="string">"_blank"</span><span class="tag">&gt;</span>Novembre 2021<span class="tag">&lt;/a&gt;&lt;/li&gt;</span><br/>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tag">&lt;li&gt;&lt;a</span> <span class="attr">href</span>=<span class="string">"Archives/Arch10-2021.html"</span> <span class="attr">target</span>=<span class="string">"_blank"</span><span class="tag">&gt;</span>Octobre 2021<span class="tag">&lt;/a&gt;&lt;/li&gt;</span><br/>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tag">&lt;/ol&gt;</span><br/>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tag">&lt;/li&gt;</span><br/>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tag">&lt;li&gt;</span>Archive2022 (non encore prêt)<span class="tag">&lt;/li&gt;</span><br/>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="tag">&lt;/ul&gt;</span><br/>
+                &nbsp;&nbsp;<span class="tag">&lt;/aside&gt;</span><br/>
+                &nbsp;&nbsp;<span class="tag">&lt;footer&gt;</span>&copy; 2026 EasyTravel - Tous droits réservés<span class="tag">&lt;/footer&gt;</span><br/>
+                <span class="tag">&lt;/body&gt;</span><br/>
+                <span class="tag">&lt;/html&gt;</span>
+            </div>
+
+            <div class="footer-signature">
+                <span class="hand">📚 Livre STI -4éme SI</span>
+                <span class="hand">✏️ Prof : Hosni Yosri</span>
+            </div>
+        </div>
+
+        <!-- ========================================================== -->
+        <!-- PAGE 7 – EXERCICES EXTRAITS DU BAC                         -->
+        <!-- ========================================================== -->
+        <div class="page page-p7 scrollbar" id="page7">
+            <div class="curl-shadow"></div>
+            <div class="curl"></div>
+
+            <div class="page-title">🎓 Exercices Extraits du Bac</div>
+
+            <!-- EXERCICE 1 : BAC STI CTRL 2025 -->
+            <div class="bac-card">
+                <span class="bac-badge">Bac STI Ctrl 2025</span>
+                <p><strong>b)</strong> Pour colorer en blanc les textes des liens <em>"Accueil"</em>, <em>"Ajout des données"</em> et <em>"Statistiques"</em>, la règle à ajouter au niveau de la ligne 2 du code CSS (<em>Fig.3</em>) est :</p>
+                
+                <div class="qcm-option">
+                    <span class="qcm-box"></span> <code>div { color: white; }</code>
+                </div>
+                <div class="qcm-option">
+                    <span class="qcm-box"></span> <code>href { color: white; }</code>
+                </div>
+                <div class="qcm-option">
+                    <span class="qcm-box"></span> <code>a { color: white; }</code>
+                </div>
+            </div>
+
+            <!-- EXERCICE 2 : BAC STI 2024 -->
+            <div class="bac-card">
+                <span class="bac-badge">Bac STI 2024</span>
+                <p><strong>1)</strong> En HTML, quelle est la signification du mot <strong>href</strong> dans l'exemple ci-dessous ?</p>
+                
+                <div style="background: #ffffff; border: 1px solid #475569; padding: 6px; font-family: monospace; font-size: 11px; margin: 6px 0; border-radius: 4px;">
+                    &lt;a <strong>href</strong>="http://www.programming.info"&gt; Suivez le lien &lt;/a&gt;
+                </div>
+
+                <div class="qcm-option">
+                    <span class="qcm-box"></span> <strong>Un attribut</strong>
+                </div>
+                <div class="qcm-option">
+                    <span class="qcm-box"></span> Une valeur
+                </div>
+                <div class="qcm-option">
+                    <span class="qcm-box"></span> Un élément
+                </div>
+            </div>
+
+            <!-- EXERCICE 3 : BAC STI CTRL 2023 - Q1 -->
+            <div class="bac-card">
+                <span class="bac-badge">Bac STI Ctrl 2023</span>
+                <p><strong>1)</strong> En HTML5, quels sont les éléments nécessaires à la création d'une liste à puces ?</p>
+                
+                <div class="qcm-option">
+                    <span class="qcm-box"></span> <code>ul</code> &nbsp et &nbsp <code>li</code>
+                </div>
+                <div class="qcm-option">
+                    <span class="qcm-box"></span> <code>ol</code>&nbsp et &nbsp<code>li</code>
+                </div>
+                <div class="qcm-option">
+                    <span class="qcm-box"></span> <code>ul</code>&nbsp et &nbsp<code>ol</code>
+                </div>
+            </div>
+
+            <!-- EXERCICE 4 : BAC STI CTRL 2023 - Q2 -->
+            <div class="bac-card">
+                <span class="bac-badge">Bac STI Ctrl 2023</span>
+                <p><strong>2)</strong> Par quelle expression doit-on remplacer les pointillés de la balise ci-dessous pour référencer le fichier <strong>mesStyles.css</strong> dans une page HTML5 ?</p>
+                
+                <div style="background: #ffffff; border: 1px solid #475569; padding: 6px; font-family: monospace; font-size: 11px; margin: 6px 0; border-radius: 4px;">
+                    &lt;............. = "mesStyles.css" rel = "stylesheet" type = "text/css"&gt;
+                </div>
+
+                <div class="qcm-option">
+                    <span class="qcm-box"></span> <code>link src</code>
+                </div>
+                <div class="qcm-option">
+                    <span class="qcm-box"></span> <code>link href</code>
+                </div>
+                <div class="qcm-option">
+                    <span class="qcm-box"></span> <code>a href</code>
+                </div>
+            </div>
+
+            <div class="footer-signature">
+                <span class="hand">📚 Livre STI -4éme SI</span>
+                <span class="hand">✏️ Prof : Hosni Yosri</span>
+            </div>
+        </div>
+
+        <!-- ZONES DE CLIC & COMMANDES -->
+        <div class="click-area click-area-left" id="prevArea"><span class="arrow-icon">‹</span></div>
+        <div class="click-area click-area-right" id="nextArea"><span class="arrow-icon">›</span></div>
+
+        <div class="page-indicator" id="pageIndicator">1 / 7</div>
+        <div class="progress-bar" id="progressBar"></div>
+
+    </div>
+
+    <!-- JAVASCRIPT DE NAVIGATION & BOUTONS COPIER -->
+    <script>
+        // Navigation du Livre sur 7 pages
+        const book = document.getElementById('book');
+        const prevArea = document.getElementById('prevArea');
+        const nextArea = document.getElementById('nextArea');
+        const indicator = document.getElementById('pageIndicator');
+        const progressBar = document.getElementById('progressBar');
+
+        let currentPage = 1;
+        const totalPages = 7;
+        let isAnimating = false;
+
+        function updateUI() {
+            indicator.textContent = currentPage + ' / ' + totalPages;
+            const progress = (currentPage / totalPages) * 100;
+            progressBar.style.width = progress + '%';
+
+            book.classList.remove('flipped-1', 'flipped-2', 'flipped-3', 'flipped-4', 'flipped-5', 'flipped-6', 'show-p1', 'show-p2', 'show-p3', 'show-p4', 'show-p5', 'show-p6', 'show-p7');
+            book.classList.add('show-p' + currentPage);
+
+            if (currentPage >= 2) book.classList.add('flipped-1');
+            if (currentPage >= 3) book.classList.add('flipped-2');
+            if (currentPage >= 4) book.classList.add('flipped-3');
+            if (currentPage >= 5) book.classList.add('flipped-4');
+            if (currentPage >= 6) book.classList.add('flipped-5');
+            if (currentPage >= 7) book.classList.add('flipped-6');
+        }
+
+        function goToPage(page) {
+            if (isAnimating || page < 1 || page > totalPages || page === currentPage) return;
+            isAnimating = true;
+            currentPage = page;
+            updateUI();
+            setTimeout(() => { isAnimating = false; }, 1000);
+        }
+
+        function nextPage() { if (currentPage < totalPages) goToPage(currentPage + 1); }
+        function prevPage() { if (currentPage > 1) goToPage(currentPage - 1); }
+
+        nextArea.addEventListener('click', nextPage);
+        prevArea.addEventListener('click', prevPage);
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextPage(); }
+            else if (e.key === 'ArrowLeft') { e.preventDefault(); prevPage(); }
+        });
+
+        // Génération automatique des boutons "Copier" pour chaque bloc de code
+        document.querySelectorAll('.code-block').forEach((block) => {
+            const btn = document.createElement('button');
+            btn.className = 'copy-btn';
+            btn.textContent = 'Copier';
+            
+            btn.addEventListener('click', () => {
+                const clone = block.cloneNode(true);
+                const label = clone.querySelector('.label-code');
+                const copyBtn = clone.querySelector('.copy-btn');
+                if (label) label.remove();
+                if (copyBtn) copyBtn.remove();
+                
+                const textToCopy = clone.innerText.trim();
+                
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    btn.textContent = 'Copié !';
+                    btn.style.background = '#27ae60';
+                    setTimeout(() => { 
+                        btn.textContent = 'Copier'; 
+                        btn.style.background = '#334155';
+                    }, 2000);
+                });
+            });
+            
+            block.appendChild(btn);
+        });
+
+        updateUI();
+    </script>
+</body>
+</html>
